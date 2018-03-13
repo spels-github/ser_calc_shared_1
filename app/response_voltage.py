@@ -9,14 +9,7 @@ from functools import partial, wraps
 
 Da = 25.
 D = 12.
-
-lib = ctypes.CDLL('../libintegrand.dll')
-
-lib.i_c.restype = ctypes.c_double
-lib.i_c.argtypes = (ctypes.c_double, ctypes.c_void_p)
-
-lib.i_b.restype = ctypes.c_double
-lib.i_b.argtype = ctypes.c_void_p
+lib = None
 
 
 def memoize2(obj):
@@ -36,6 +29,15 @@ def round_to_n(x, n):
 
 
 def voltage_amplitude(track, LET, R, L, capacitance=1.0e-15, resistance=1.4e4):
+    global lib
+    lib = ctypes.CDLL('../libintegrand.dll')
+
+    lib.i_c.restype = ctypes.c_double
+    lib.i_c.argtypes = (ctypes.c_double, ctypes.c_void_p)
+
+    lib.i_b.restype = ctypes.c_double
+    lib.i_b.argtype = ctypes.c_void_p
+
     res = minimize_scalar(lambda time_log: - current_integral(track, time_log, capacitance, resistance, R, L),
                           bounds=(np.log(1e-14), np.log(1e-9)), method='bounded',
                           options={'xatol': 1e-03})
