@@ -100,6 +100,9 @@ class Simulation(object):
         self.output_file = output_file
         self.physical_parameters = physical_parameters
 
+    def get_results(self):
+        return self.results
+
     def run_monte_carlo(self, device, model):
         """
         Run Monte Carlo simulation for chosen device and model.
@@ -126,14 +129,11 @@ class Simulation(object):
         else:
             cross_section = (4 * mean * np.pi * ((device.get_process_node() * 2e-6) ** 2)) / \
                             self.accuracy['particles_count']
-        self.results = np.array([np.logspace(-3, 2, self.accuracy['let_values_count']), mean, std_dev, cross_section])
+        self.results = np.array([np.logspace(-3, 2, self.accuracy['let_values_count']), cross_section, mean, std_dev])
         return self.results
 
     def run_analytical(self, device, model):
-        raise NotImplementedError
-
-    def get_results(self):
-        return self.results
+        return model.find_iso_cross_section(device, self.accuracy['let_values_count'])
 
 
 def calculate_ser(sim_results, spectre):

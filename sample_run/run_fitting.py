@@ -6,20 +6,20 @@ from app.ser_calculation import Device, Timer
 from app.models import Model
 
 
-def run_fit(model_type):
+def run_fit(model_type, sim_type):
     """
     Test function. Finds parameter values and plots cross-section curves for the given dataset
     :return:
     """
-    device = Device(250, 2.5, '../Input_cross_section.xlsx')
-    model = Model(model_type)
+    device = Device(250, 2.5, '../reference_cs.xlsx')
+    model = Model(model_type, sim_type)
 
     with Timer() as t:
         device.find_parameters(model)
     print("=> elapsed time: %s s" % t.secs)
 
     par1, par2 = device.get_parameters(model)
-    if model_type == 'point':
+    if model_type == 'point' or sim_type == 'analytical':
         print('Found Lc = {0}, LET0 = {1}'.format(par1, par2))
         parameters = [par1*1e4, par2]
     else:
@@ -40,7 +40,8 @@ def run_fit(model_type):
 
 
 def main():
-    run_fit('voltage')
+    run_fit('voltage', 'analytical')
+    #run_fit('point', 'monte_carlo')
     pass
 
 
