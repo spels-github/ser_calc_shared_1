@@ -13,14 +13,14 @@ def run_sim(model_type, sim_type):
     """
     # Create Device instance using information from DB: process node, supply voltage and experimental results
     # Necessary parameters should be defined by user before simulation
-    device = Device(250, 2.5, '../reference_cs.xlsx')
+    device = Device(500, 5.0, '../reference_cs.xlsx')
 
     # Calculation model chosen by user
     model = Model(model_type, sim_type)
 
     # Additional parameters of calculation model defined by user via GUI, presented values are default ones
     phys = {'diff_coefficient': 12., 'ambipolar_diff_coefficient': 25.}
-    accuracy = {'trials_count': 40, 'particles_count': 400000, 'let_values_count': 300}
+    accuracy = {'trials_count': 20, 'particles_count': 50000, 'let_values_count': 300}
 
     # Log file, doesn't have to be xlsx, it's only used now for convenience. Doesn't even have to be a file,
     # can just be pandas DataFrame stored in the DB

@@ -47,9 +47,9 @@ class Model(object):
                                                xtol=1e-4, verbose=2, diff_step=0.1)
             parameters[0] = parameters[0] * 1e-4
         elif self.model_type == 'voltage':
-            parameters, covariance = curve_fit(linearized_cross_section, x_data, y_data, p0=[node, node * 4],
-                                               bounds=([node / 4, node * 2], [node * 4, node * 8]),
-                                               xtol=1e-5, verbose=2, diff_step=0.01)
+            parameters, covariance = curve_fit(linearized_cross_section, x_data, y_data, p0=[node/4, node * 4],
+                                               bounds=([node / 16, node / 2], [node * 4, node * 8]),
+                                               xtol=1e-4, verbose=2, diff_step=0.01)
             parameters = parameters * 1e-4
         return parameters
 
@@ -117,7 +117,7 @@ class Model(object):
 
             voltage = partial(voltage_amplitude, LET=1, R=R, L=L, capacitance=capacitance,
                               resistance=resistance)
-            all_voltages = parallel_solve(voltage, tracks, chunk_size=3000)
+            all_voltages = parallel_solve(voltage, tracks, chunk_size=2000)
             trial_results = []
             for LET in np.logspace(-3, 2, let_count):
                 # calculates the difference between voltage amplitude and half of supply voltage

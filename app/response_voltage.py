@@ -28,7 +28,7 @@ def round_to_n(x, n):
     return float(fmt % x)
 
 
-def voltage_amplitude(track, LET, R, L, capacitance=1.0e-15, resistance=1.4e4):
+def voltage_amplitude(track, LET, R, L, capacitance=1.0e-14, resistance=3.0e4):
     global lib
     lib = ctypes.CDLL('../libintegrand.dll')
 
