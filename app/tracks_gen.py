@@ -2,7 +2,7 @@ import numpy as np
 import math
 import random
 from numpy.core.umath_tests import inner1d
-from scipy.linalg import expm3, norm
+from scipy.linalg import expm, norm
 
 
 def sample_spherical(points_count, dimensions=3):
@@ -39,7 +39,7 @@ def rot_matrix(axis, theta):
     :param theta:
     :return:
     """
-    return expm3(np.cross(np.eye(3), axis/norm(axis)*theta))
+    return expm(np.cross(np.eye(3), axis/norm(axis)*theta))
 
 
 def sample_2d_disc(points_count):
