@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.optimize import curve_fit, brentq
-from multiprocessing import Pool, freeze_support, cpu_count
+from multiprocessing import freeze_support, cpu_count, Process, Queue
 from functools import partial
 from app.response_voltage import voltage_amplitude
 from app.response_point import track_charge
@@ -68,14 +68,27 @@ class Model(object):
                 iterator = iter(LET_values)
             except TypeError:
                 LET_values = [LET_values]
-            radius_values = []
-            f = partial(find_radius, parameters=parameters, model=self.model_type, vdd=vdd)
-            pool = Pool(processes=cpu_count() - 1)
-            result = pool.map_async(f, LET_values, callback=radius_values.append)
-            result.wait()
-            pool.close()
-            pool.join()
-            radius_values = [item for sublist in radius_values for item in sublist]
+
+            out_q = Queue()
+            chunksize = int(np.ceil(len(LET_values) / float(cpu_count() - 1)))
+            procs = []
+
+            for i in range(cpu_count() - 1):
+                p = Process(
+                    target=worker_fitting,
+                    args=(LET_values[chunksize * i:chunksize * (i + 1)],
+                          out_q, parameters, self.model_type, vdd))
+                procs.append(p)
+                p.start()
+
+            resultdict = {}
+            for i in range(cpu_count() - 1):
+                resultdict.update(out_q.get())
+
+            for p in procs:
+                p.join()
+
+            radius_values = [resultdict[LET] for LET in LET_values]
 
         elif self.sim_type == "analytical":
 
@@ -117,7 +130,7 @@ class Model(object):
 
             voltage = partial(voltage_amplitude, LET=1, R=R, L=L, capacitance=capacitance,
                               resistance=resistance)
-            all_voltages = parallel_solve(voltage, tracks, chunk_size=2000)
+            all_voltages = parallel_solve(voltage, tracks)
             trial_results = []
             for LET in np.logspace(-3, 2, let_count):
                 # calculates the difference between voltage amplitude and half of supply voltage
@@ -168,7 +181,7 @@ def find_radius(LET, parameters, model, vdd):
     return radius
 
 
-def parallel_solve(response_function, tracks, chunk_size=200000):
+def parallel_solve(response_function, tracks):
     """
     Find response value for each track using multiprocessing
     :param response_function: function describing circuit response for a chosen model
@@ -176,16 +189,57 @@ def parallel_solve(response_function, tracks, chunk_size=200000):
     :param chunk_size: size of tracks list chunk, set to prevent memory overflow
     :return: list of response values for each track
     """
-    responses = []
-    for chunk in [tracks[i:i + chunk_size] for i in range(0, len(tracks), chunk_size)]:
-        pool = Pool(processes=cpu_count() - 1)
-        r = pool.map_async(response_function, chunk, callback=responses.append)
-        r.wait()
-        pool.close()
-        pool.join()
-        print("Chunk finished")
-    responses = [item for sublist in responses for item in sublist]
+    out_q = Queue()
+    chunksize = int(np.ceil(len(tracks) / float(cpu_count() - 1)))
+    procs = []
+
+    for i in range(cpu_count() - 1):
+        p = Process(
+            target=worker_solving,
+            args=(tracks[chunksize * i:chunksize * (i + 1)],
+                  out_q, response_function))
+        procs.append(p)
+        p.start()
+
+    resultdict = {}
+    for i in range(cpu_count() - 1):
+        resultdict.update(out_q.get())
+
+    for p in procs:
+        p.join()
+
+    responses = [resultdict[str(track)] for track in tracks]
     return responses
+
+
+def worker_fitting(LET_values, out_q, parameters, model_type, vdd):
+    """
+    Worker for multiprocessing in cross-section fitting
+    :param LET_values:
+    :param out_q:
+    :param parameters:
+    :param model_type:
+    :param vdd:
+    """
+    outdict = {}
+    for LET in LET_values:
+        outdict[LET] = find_radius(LET, parameters, model_type, vdd)
+    out_q.put(outdict)
+
+
+def worker_solving(tracks, out_q, response_function):
+    """
+    Worker for multiprocessing in monte carlo trial for isotropic calculation
+    :param LET_values:
+    :param out_q:
+    :param parameters:
+    :param model_type:
+    :param vdd:
+    """
+    outdict = {}
+    for track in tracks:
+        outdict[str(track)] = response_function(track)
+    out_q.put(outdict)
 
 
 def main():

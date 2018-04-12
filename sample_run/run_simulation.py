@@ -60,7 +60,7 @@ def run_ser():
 
 def main():
     # run_sim('voltage', 'analytical')
-    run_sim('voltage', 'monte_carlo')  # currently, only "point" model is working correctly
+    run_sim('point', 'monte_carlo')  # currently, only "point" model is working correctly
     run_ser()
     pass
 

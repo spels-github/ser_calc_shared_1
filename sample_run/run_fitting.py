@@ -40,8 +40,8 @@ def run_fit(model_type, sim_type):
 
 
 def main():
-    run_fit('voltage', 'monte_carlo')
-    # run_fit('point', 'monte_carlo')
+    # run_fit('voltage', 'analytical')
+    run_fit('point', 'monte_carlo')
     pass
 
 
